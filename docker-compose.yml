@@ -1,0 +1,50 @@
+services:
+  web:
+    build: .
+    ports:
+      - "8080:80"
+    volumes:
+      - ./:/var/www/html
+    environment:
+      DB_HOST: db
+      DB_USER: root
+      DB_PASS: root
+      DB_NAME: myportfolio
+      # SMTP settings used by api/sendMail_api.php (PHPMailer) to actually
+      # deliver the contact-form email. PHP's mail() does not work in this
+      # container (no MTA installed), so real SMTP credentials are required
+      # here. Gmail example: SMTP_USER is your full gmail address and
+      # SMTP_PASS is a 16-character Google "App Password" (NOT your normal
+      # Gmail password — App Passwords require 2-Step Verification to be
+      # enabled on the account: https://myaccount.google.com/apppasswords).
+      SMTP_HOST: smtp.gmail.com
+      SMTP_PORT: 587
+      SMTP_SECURE: tls
+      # Real values come from a local .env file (see .env.example) which is
+      # gitignored and never committed — a real app password was previously
+      # hardcoded here directly and had to be revoked.
+      SMTP_USER: "${SMTP_USER}"
+      SMTP_PASS: "${SMTP_PASS}"
+      OWNER_EMAIL: "${OWNER_EMAIL}"
+      OWNER_NAME: "Portfolio Contact Form"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  db:
+    image: mysql:8.0
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: myportfolio
+    volumes:
+      - ./database/schema.sql:/docker-entrypoint-initdb.d/schema.sql
+      - db_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-proot"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  db_data:

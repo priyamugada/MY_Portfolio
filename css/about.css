@@ -1,0 +1,177 @@
+*{
+    box-sizing: border-box;
+    margin: 0px;
+    font-family: "Josefin Sans", sans-serif;
+}
+
+.about .sub1 .row{
+    height: 100%;
+    width: 100%;
+    
+    justify-content: center;
+}
+
+.icon{
+    height: 35px;
+    width: 35px;
+    /* border-right: 1px solid black;
+    border-bottom: 1px solid black; */
+    align-self: flex-start;
+    margin: 10px;
+    /* box-shadow: 5px 5px 5px 5px black; */
+}
+
+@media (max-width: 768px) {
+  .about {
+    min-height:600px;
+    height: auto;
+  }
+}
+.about {
+
+    min-height: 600px;     /* base height */
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start; 
+    background: linear-gradient(to right,grey,white);/* don't vertically center */
+}
+
+.sub1 {
+    width: 95%;
+
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;  /* allow growth */
+    flex-wrap: wrap;
+}
+
+/* remove height: 90% from .sub1, height: 100% from .card1, etc. */
+.card1 {
+    width: 50%;
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 0px;
+    display: flex;
+
+    justify-content: center;
+    align-items: center;
+}
+
+
+#About, #edu, #Projects, #Skills, #certifications {
+  scroll-margin-top: 60px; /* equal or slightly more than your navbar height */
+}
+
+span{
+    font-size: 20px;
+}
+.icons{
+    display: flex;
+    margin: 30px;    
+}
+.a{
+    
+    width: 100%;
+    min-height: 80px;
+    height: auto; 
+    padding: 20px;
+  
+}
+.icon i {
+  font-size: 35px;      /* resize icon so it fits */
+  color: #000;          /* icon color */
+}
+#boxed{
+ 
+  height: auto;
+  min-height: 540px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+
+
+}
+
+
+/* 5 Petals positions */
+.round.one   { top: 6%; left: 70%;transform: translate(-50%, 0); }
+.round.two   { top: 60%; right: 0%; transform: translate(0, -50%); }
+.round.three { bottom: 0%; left: 51%; transform: translate(-50%, 0); }
+.round.four  { top: 60%; left: 0%; transform: translate(0, -50%); }
+.round.five  { top: 7%; left: 15%; transform: translate(0, 0); }
+
+/* Hover effect */
+.round-container {
+  position: relative;
+  width: 70vw;
+  max-width: 600px;
+  aspect-ratio: 1 / 1;
+  margin: 0 auto;
+}
+
+/* Common Round Styles */
+.round {
+  position: absolute;
+  width: 28%;
+  aspect-ratio: 1 / 1;
+  border-radius: 50%;
+  background-color: #c7bcbc;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  padding: 10px;
+  font-weight: bold;
+  box-shadow: 0px 4px 12px rgba(0,0,0,0.25);
+  transition: transform 0.3s ease;
+}
+
+/* Center Circle */
+.round.center {
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 2rem;
+}
+
+/* Petal Positions */
+
+/* Hover effect */
+.round:hover {
+  transform: scale(1.15);
+  background-color: #8e7e7e;
+}
+
+/* Text inside rounds */
+.round h5 {
+  margin: 0 0 5px 0;
+  font-size: 1rem;
+}
+.round p {
+  margin: 0;
+  font-size: 0.85rem;
+  line-height: 1.2;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .round-container { width: 90vw; }
+  .round { width: 30%; font-size: 0.9rem; }
+}
+
+@media (max-width: 480px) {
+  .round { width: 35%; font-size: 0.8rem; }
+}
+.round h5 {
+  display: inline-block;
+  padding: 2px 6px;
+  border-radius: 5px;
+  color: brown;
+  font-weight: 700;
+  font-size: 1.1rem;
+  text-transform: uppercase;
+  margin-bottom: 5px;
+}

@@ -1,0 +1,38 @@
+.projects{
+    min-height: 550px;
+    height: auto;
+    border: 1px solid black;
+    background: linear-gradient(to left,gray,#D2D0D1, gray);
+    margin-top: 0%;
+}
+
+.projects .container {
+    padding-top: 0;
+    padding-bottom: 0;
+}
+
+.box{
+    min-height: 250px;
+    height: auto;
+    border-bottom: 1px solid black;
+    border-right: 1px solid black;
+    box-shadow: 8px 8px 8px black;
+    width: 250px;
+    margin: 45px;
+    background: linear-gradient(to left,white,#ccc);
+    border-radius: 5px;
+    padding: 8px;
+}
+
+.projects .container .row{
+    justify-content: center;
+    align-items: center;   
+}
+
+.box:hover{
+     background: linear-gradient(to left,gray,#D2D0D1, gray);
+     transform: scale(1.1);
+     cursor: pointer;
+
+}
+
