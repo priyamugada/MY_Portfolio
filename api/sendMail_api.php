@@ -56,8 +56,22 @@ try {
     $mail->SMTPAuth   = true;
     $mail->Username   = $smtp_username;
     $mail->Password   = $smtp_password;
-    $mail->SMTPSecure = $smtp_secure === 'ssl' ? PHPMailer::ENCRYPTION_SMTPS : PHPMailer::ENCRYPTION_STARTTLS;
+    
+    $sec = strtolower(trim($smtp_secure));
+    if ($sec === 'ssl' || $sec === 'smtps' || (int) $smtp_port === 465) {
+        $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;
+    } else {
+        $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+    }
     $mail->Port       = (int) $smtp_port;
+
+    $mail->SMTPOptions = [
+        'ssl' => [
+            'verify_peer'       => false,
+            'verify_peer_name'  => false,
+            'allow_self_signed' => true,
+        ]
+    ];
 
     // Sender / recipient
     // Most SMTP providers (Gmail included) reject or spoof-flag a From

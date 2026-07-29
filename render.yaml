@@ -21,9 +21,9 @@ services:
       - key: SMTP_HOST
         value: smtp.gmail.com
       - key: SMTP_PORT
-        value: "587"
+        value: "465"
       - key: SMTP_SECURE
-        value: tls
+        value: ssl
       - key: SMTP_USER
         value: venugopalmugada@gmail.com
       - key: SMTP_PASS
