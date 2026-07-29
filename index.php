@@ -342,7 +342,7 @@
                 </a>
               <?php endif; ?>
               <button class="button btn-edit-project" onclick="openEditProjectModal(this)">Edit</button>
-              <button class="button btn-delete-project" style="background: #dc3545; color: white;" onclick="deleteProject(<?php echo $id; ?>)">Delete</button>
+              <button class="button btn-delete-project" onclick="deleteProject(<?php echo $id; ?>)">Delete</button>
             </div>
           </div>
         <?php endwhile; ?>

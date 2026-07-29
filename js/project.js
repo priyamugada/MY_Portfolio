@@ -198,7 +198,7 @@ window.addEventListener('load', function () {
               <div class="d-flex flex-wrap gap-2 mt-2 align-items-center">
                 ${project_link ? `<a href="${project_link}" target="_blank" class="card-link-anchor"><button class="button">View</button></a>` : ''}
                 <button class="button btn-edit-project" onclick="openEditProjectModal(this)">Edit</button>
-                <button class="button btn-delete-project" style="background: #dc3545; color: white;" onclick="deleteProject(${newId})">Delete</button>
+                <button class="button btn-delete-project" onclick="deleteProject(${newId})">Delete</button>
               </div>
             `;
 

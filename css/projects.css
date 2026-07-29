@@ -33,6 +33,30 @@
      background: linear-gradient(to left,gray,#D2D0D1, gray);
      transform: scale(1.1);
      cursor: pointer;
+}
 
+/* Button styles matching website theme */
+.projects .button {
+    background-color: #EF5C4F;
+    border: none;
+    color: white;
+    padding: 6px 14px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    border-radius: 5px;
+    font-weight: 500;
+    transition: background-color 0.2s ease, transform 0.2s ease;
+}
+
+.projects .button:hover {
+    background-color: #d8483b;
+}
+
+.projects .btn-delete-project {
+    background-color: #c0392b;
+}
+
+.projects .btn-delete-project:hover {
+    background-color: #a93226;
 }
 
