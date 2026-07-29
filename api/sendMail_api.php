@@ -36,17 +36,22 @@ if (!filter_var($visitor_email, FILTER_VALIDATE_EMAIL)) {
 // escapes/validates addresses internally.
 $visitor_email = str_replace(["\r", "\n"], '', $visitor_email);
 
+function fetch_env($key) {
+    $val = $_ENV[$key] ?? $_SERVER[$key] ?? getenv($key) ?: '';
+    return trim((string)$val);
+}
+
 // 1. Check for HTTPS-based API keys first (bypasses Render's outbound SMTP port blocking)
-$resend_key    = getenv('RESEND_API_KEY');
-$brevo_key     = getenv('BREVO_API_KEY');
-$web3forms_key = getenv('WEB3FORMS_KEY');
+$resend_key    = fetch_env('RESEND_API_KEY');
+$brevo_key     = fetch_env('BREVO_API_KEY');
+$web3forms_key = fetch_env('WEB3FORMS_KEY');
 
 if (!empty($resend_key)) {
     $ch = curl_init('https://api.resend.com/emails');
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_POST, true);
     curl_setopt($ch, CURLOPT_HTTPHEADER, [
-        'Authorization: Bearer ' . trim($resend_key),
+        'Authorization: Bearer ' . $resend_key,
         'Content-Type: application/json'
     ]);
     curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode([
@@ -56,11 +61,16 @@ if (!empty($resend_key)) {
         'subject'  => 'New message from Portfolio',
         'text'     => "Message from: $visitor_email\n\n$message"
     ]));
-    $res = curl_exec($ch);
+    $res  = curl_exec($ch);
     $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
     curl_close($ch);
+    $json = json_decode($res, true);
     if ($code >= 200 && $code < 300) {
         echo json_encode(["success" => true, "message" => "message sent successfully"]);
+        exit();
+    } else {
+        $msg = $json['message'] ?? "HTTP $code";
+        echo json_encode(["success" => false, "message" => "Resend Error: " . $msg]);
         exit();
     }
 }
@@ -70,7 +80,7 @@ if (!empty($brevo_key)) {
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_POST, true);
     curl_setopt($ch, CURLOPT_HTTPHEADER, [
-        'api-key: ' . trim($brevo_key),
+        'api-key: ' . $brevo_key,
         'Content-Type: application/json'
     ]);
     curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode([
@@ -80,11 +90,16 @@ if (!empty($brevo_key)) {
         'subject'     => 'New message from Portfolio',
         'textContent' => "Message from: $visitor_email\n\n$message"
     ]));
-    $res = curl_exec($ch);
+    $res  = curl_exec($ch);
     $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
     curl_close($ch);
+    $json = json_decode($res, true);
     if ($code >= 200 && $code < 300) {
         echo json_encode(["success" => true, "message" => "message sent successfully"]);
+        exit();
+    } else {
+        $msg = $json['message'] ?? "HTTP $code";
+        echo json_encode(["success" => false, "message" => "Brevo Error: " . $msg]);
         exit();
     }
 }
@@ -95,17 +110,22 @@ if (!empty($web3forms_key)) {
     curl_setopt($ch, CURLOPT_POST, true);
     curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
     curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode([
-        'access_key' => trim($web3forms_key),
+        'access_key' => $web3forms_key,
         'name'       => $visitor_email,
         'email'      => $visitor_email,
         'message'    => $message,
         'subject'    => 'New message from Portfolio'
     ]));
-    $res = curl_exec($ch);
+    $res  = curl_exec($ch);
     $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
     curl_close($ch);
-    if ($code >= 200 && $code < 300) {
+    $json = json_decode($res, true);
+    if (($code >= 200 && $code < 300) && (!isset($json['success']) || $json['success'] === true)) {
         echo json_encode(["success" => true, "message" => "message sent successfully"]);
+        exit();
+    } else {
+        $msg = $json['message'] ?? "HTTP $code";
+        echo json_encode(["success" => false, "message" => "Web3Forms Error: " . $msg]);
         exit();
     }
 }
