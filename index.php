@@ -443,6 +443,12 @@
           </div>
           <div class="modal-body">
             <form id="mailForm">
+              <?php 
+                $web3_key = $_ENV['WEB3FORMS_KEY'] ?? $_SERVER['WEB3FORMS_KEY'] ?? getenv('WEB3FORMS_KEY') ?: '';
+                if (!empty($web3_key)): 
+              ?>
+                <input type="hidden" name="access_key" value="<?php echo htmlspecialchars($web3_key); ?>">
+              <?php endif; ?>
               <div class="form-group">
                 <label for="recipient-name" class="col-form-label">Recipient:</label>
                 <input type="email" class="form-control" id="recipient-name" name="recipient" required>
