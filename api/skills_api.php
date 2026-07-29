@@ -3,40 +3,88 @@ header("Content-Type: application/json");
 require_once __DIR__ . '/../config/db_config.php';
 
 if (!$conn) {
-    $response = array("success" => false, "message" => "Cannot connect right now!");
-    echo json_encode($response);
+    echo json_encode(["success" => false, "message" => "Database connection failed: " . mysqli_connect_error()]);
     exit();
 }
 
-$table_name = isset($_POST['table_name']) ? trim($_POST['table_name']) : '';
-$skill_name = isset($_POST['skillName']) ? trim($_POST['skillName']) : '';
-$skill_level = isset($_POST['proficiency']) ? trim($_POST['proficiency']) : '';
+$action     = trim($_POST['action'] ?? 'add');
+$table_name = trim($_POST['table_name'] ?? '');
+
+if ($table_name !== 'technical' && $table_name !== 'soft') {
+    echo json_encode(["success" => false, "message" => "Invalid skill type/table name"]);
+    exit();
+}
+
+if ($action === 'delete') {
+    $id = (int)($_POST['id'] ?? 0);
+    if ($id <= 0) {
+        echo json_encode(["success" => false, "message" => "Invalid skill ID"]);
+        exit();
+    }
+
+    $table = ($table_name === 'technical') ? 'technical_skills' : 'soft_skills';
+    $sql   = "DELETE FROM {$table} WHERE id = ?";
+    $stmt  = mysqli_prepare($conn, $sql);
+    mysqli_stmt_bind_param($stmt, "i", $id);
+
+    if (mysqli_stmt_execute($stmt)) {
+        echo json_encode(["success" => true, "message" => "Skill deleted successfully", "id" => $id, "type" => $table_name]);
+    } else {
+        echo json_encode(["success" => false, "message" => mysqli_stmt_error($stmt)]);
+    }
+    mysqli_stmt_close($stmt);
+    mysqli_close($conn);
+    exit();
+}
+
+$skill_name  = trim($_POST['skillName'] ?? '');
+$skill_level = trim($_POST['proficiency'] ?? '');
 
 if ($skill_name === '' || $skill_level === '') {
-    $response = array("success" => false, "message" => "Skill name and proficiency are required");
-    echo json_encode($response);
+    echo json_encode(["success" => false, "message" => "Skill name and proficiency are required"]);
     exit();
 }
 
-if ($table_name === 'technical') {
-    $sql = "INSERT INTO technical_skills (programming_language, proficiency) VALUES (?, ?)";
-} elseif ($table_name === 'soft') {
-    $sql = "INSERT INTO soft_skills (skills, proficiency) VALUES (?, ?)";
+if ($action === 'edit') {
+    $id = (int)($_POST['id'] ?? 0);
+    if ($id <= 0) {
+        echo json_encode(["success" => false, "message" => "Invalid skill ID for edit"]);
+        exit();
+    }
+
+    if ($table_name === 'technical') {
+        $sql = "UPDATE technical_skills SET programming_language = ?, proficiency = ? WHERE id = ?";
+    } else {
+        $sql = "UPDATE soft_skills SET skills = ?, proficiency = ? WHERE id = ?";
+    }
+
+    $stmt = mysqli_prepare($conn, $sql);
+    mysqli_stmt_bind_param($stmt, "ssi", $skill_name, $skill_level, $id);
+
+    if (mysqli_stmt_execute($stmt)) {
+        echo json_encode(["success" => true, "message" => "Skill updated successfully", "id" => $id, "type" => $table_name]);
+    } else {
+        echo json_encode(["success" => false, "message" => mysqli_stmt_error($stmt)]);
+    }
+    mysqli_stmt_close($stmt);
 } else {
-    $response = array("success" => false, "message" => "Invalid table name");
-    echo json_encode($response);
-    exit();
+    // Add action
+    if ($table_name === 'technical') {
+        $sql = "INSERT INTO technical_skills (programming_language, proficiency) VALUES (?, ?)";
+    } else {
+        $sql = "INSERT INTO soft_skills (skills, proficiency) VALUES (?, ?)";
+    }
+
+    $stmt = mysqli_prepare($conn, $sql);
+    mysqli_stmt_bind_param($stmt, "ss", $skill_name, $skill_level);
+
+    if (mysqli_stmt_execute($stmt)) {
+        $inserted_id = mysqli_insert_id($conn);
+        echo json_encode(["success" => true, "message" => "Skill added successfully", "id" => $inserted_id, "type" => $table_name]);
+    } else {
+        echo json_encode(["success" => false, "message" => mysqli_stmt_error($stmt)]);
+    }
+    mysqli_stmt_close($stmt);
 }
 
-$stmt = mysqli_prepare($conn, $sql);
-mysqli_stmt_bind_param($stmt, "ss", $skill_name, $skill_level);
-
-if (mysqli_stmt_execute($stmt)) {
-    $response = array("success" => true, "message" => "Skill added successfully");
-} else {
-    $response = array("success" => false, "message" => mysqli_stmt_error($stmt));
-}
-
-echo json_encode($response);
-mysqli_stmt_close($stmt);
 mysqli_close($conn);

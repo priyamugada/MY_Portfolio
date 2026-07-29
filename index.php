@@ -356,42 +356,64 @@
     <div class="row">
       <div class="skill-table col-lg-6 col-md-11 col-sm-11">
         <table id="technical">
-          <tr>
-            <th colspan="2">Technical Skills</th>
-          </tr>
-          <tr>
-            <th>Programming Languages</th>
-            <th>Proficiency</th>
-          </tr>
-          <?php while ($row = mysqli_fetch_assoc($technical_skills)): ?>
+          <thead>
             <tr>
-              <td><?php echo $row['programming_language'] ?></td>
-
-              <td><?php echo $row['proficiency'] ?></td>
+              <th colspan="3">Technical Skills</th>
             </tr>
-          <?php endwhile; ?>
+            <tr>
+              <th>Programming Languages</th>
+              <th>Proficiency</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <?php while ($row = mysqli_fetch_assoc($technical_skills)): ?>
+              <?php $id = (int)$row['id']; ?>
+              <tr id="tech-skill-row-<?php echo $id; ?>" data-id="<?php echo $id; ?>" data-type="technical" data-name="<?php echo htmlspecialchars($row['programming_language']); ?>" data-level="<?php echo htmlspecialchars($row['proficiency']); ?>">
+                <td class="skill-name-cell"><?php echo htmlspecialchars($row['programming_language']); ?></td>
+                <td class="skill-level-cell"><?php echo htmlspecialchars($row['proficiency']); ?></td>
+                <td>
+                  <button class="button btn-sm" onclick="openEditSkillModal(this)">Edit</button>
+                  <button class="button btn-sm btn-delete-skill" onclick="deleteSkill('technical', <?php echo $id; ?>)">Delete</button>
+                </td>
+              </tr>
+            <?php endwhile; ?>
+          </tbody>
         </table>
-        <button type="button" class="button" data-bs-toggle="modal" data-bs-target="#skill_add" id="technical_skill">
+        <button type="button" class="button mt-3" onclick="openAddSkillModal('technical')" id="technical_skill">
           Add Skill
         </button>
-
       </div>
+
       <div class="skill-table col-lg-6 col-md-11 col-sm-11">
         <table id="soft">
-          <tr>
-            <th colspan="2">Soft Skills</th>
-          </tr>
-          <?php while ($row = mysqli_fetch_assoc($soft_skills)): ?>
+          <thead>
             <tr>
-              <td><?php echo $row['skills'] ?></td>
-              <td><?php echo $row['proficiency'] ?></td>
+              <th colspan="3">Soft Skills</th>
             </tr>
-          <?php endwhile; ?>
+            <tr>
+              <th>Skill</th>
+              <th>Proficiency</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <?php while ($row = mysqli_fetch_assoc($soft_skills)): ?>
+              <?php $id = (int)$row['id']; ?>
+              <tr id="soft-skill-row-<?php echo $id; ?>" data-id="<?php echo $id; ?>" data-type="soft" data-name="<?php echo htmlspecialchars($row['skills']); ?>" data-level="<?php echo htmlspecialchars($row['proficiency']); ?>">
+                <td class="skill-name-cell"><?php echo htmlspecialchars($row['skills']); ?></td>
+                <td class="skill-level-cell"><?php echo htmlspecialchars($row['proficiency']); ?></td>
+                <td>
+                  <button class="button btn-sm" onclick="openEditSkillModal(this)">Edit</button>
+                  <button class="button btn-sm btn-delete-skill" onclick="deleteSkill('soft', <?php echo $id; ?>)">Delete</button>
+                </td>
+              </tr>
+            <?php endwhile; ?>
+          </tbody>
         </table>
-        <button type="button" class="button" data-bs-toggle="modal" data-bs-target="#skill_add">
+        <button type="button" class="button mt-3" onclick="openAddSkillModal('soft')">
           Add Skill
         </button>
-
       </div>
     </div>
   </div>
@@ -537,33 +559,37 @@
     <div class="modal-dialog modal-lg">
       <div class="modal-content">
         <div class="modal-header">
-          <h5 class="modal-title" id="modal">Add Skill</h5>
+          <h5 class="modal-title" id="skillModalTitle">Add Skill</h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="close"></button>
         </div>
         <div class="modal-body">
           <form id="addSkill">
+            <input type="hidden" id="skillId" name="id" value="">
+            <input type="hidden" id="skillAction" name="action" value="add">
             <div class="mb-3">
               <label for="skilltype" class="form-label">Skill Type</label>
-              <select class="form-select" id="skilltype" name="table_name">
-                <option value="soft">Soft Skill</option>
+              <select class="form-select" id="skilltype" name="table_name" required>
                 <option value="technical">Technical Skill</option>
+                <option value="soft">Soft Skill</option>
               </select>
             </div>
             <div class="mb-3">
               <label for="skillName" class="form-label">Skill Name</label>
-              <input type="text" class="form-control" id="skillName" name="skillName">
+              <input type="text" class="form-control" id="skillName" name="skillName" required>
             </div>
             <div class="mb-3">
               <label for="proficiency" class="form-label">Proficiency Level</label>
-              <select class="form-select" id="proficiency" name="proficiency">
+              <select class="form-select" id="proficiency" name="proficiency" required>
                 <option value="Beginner">Beginner</option>
                 <option value="Intermediate">Intermediate</option>
                 <option value="Advanced">Advanced</option>
               </select>
             </div>
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"
-              onclick="clearFields()">Close</button>
-            <button type="submit" class="btn btn-primary" id="saveSkills">Save Skill</button>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"
+                onclick="clearFields()">Close</button>
+              <button type="submit" class="btn btn-primary" id="saveSkills">Save Skill</button>
+            </div>
           </form>
         </div>
       </div>
