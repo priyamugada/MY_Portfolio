@@ -47,23 +47,22 @@ if (empty($smtp_username) || empty($smtp_password)) {
     exit();
 }
 
-$mail = new PHPMailer(true);
-
-try {
-    // Server settings
+function send_with_phpmailer($host, $port, $secure, $user, $pass, $from_name, $to_email, $to_name, $reply_to, $body_text) {
+    $mail = new PHPMailer(true);
     $mail->isSMTP();
-    $mail->Host       = $smtp_host;
+    $mail->Host       = $host;
     $mail->SMTPAuth   = true;
-    $mail->Username   = $smtp_username;
-    $mail->Password   = $smtp_password;
+    $mail->Username   = $user;
+    $mail->Password   = $pass;
+    $mail->Timeout    = 10;
     
-    $sec = strtolower(trim($smtp_secure));
-    if ($sec === 'ssl' || $sec === 'smtps' || (int) $smtp_port === 465) {
+    $sec = strtolower(trim($secure));
+    if ($sec === 'ssl' || $sec === 'smtps' || (int) $port === 465) {
         $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;
     } else {
         $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
     }
-    $mail->Port       = (int) $smtp_port;
+    $mail->Port       = (int) $port;
 
     $mail->SMTPOptions = [
         'ssl' => [
@@ -73,31 +72,40 @@ try {
         ]
     ];
 
-    // Sender / recipient
-    // Most SMTP providers (Gmail included) reject or spoof-flag a From
-    // address that isn't the authenticated mailbox, so the authenticated
-    // SMTP account is always the From address. The visitor's email is set
-    // as Reply-To so the owner can just hit "reply" in their mail client.
-    $mail->setFrom($smtp_username, $owner_name);
-    $mail->addAddress($owner_email, $owner_name);
-    $mail->addReplyTo($visitor_email, $visitor_email);
+    $mail->setFrom($user, $from_name);
+    $mail->addAddress($to_email, $to_name);
+    $mail->addReplyTo($reply_to, $reply_to);
 
-    // Content
     $mail->isHTML(false);
     $mail->CharSet = 'UTF-8';
     $mail->Subject = "New message from Portfolio";
-    $mail->Body    = "Message from: $visitor_email\n\n$message";
+    $mail->Body    = "Message from: $reply_to\n\n$body_text";
 
     $mail->send();
+}
 
+// First try with configured port & secure settings
+try {
+    send_with_phpmailer($smtp_host, $smtp_port, $smtp_secure, $smtp_username, $smtp_password, $owner_name, $owner_email, $owner_name, $visitor_email, $message);
     echo json_encode(["success" => true, "message" => "message sent successfully"]);
-} catch (PHPMailerException $e) {
-    // $mail->ErrorInfo has the underlying SMTP error (auth failure, wrong
-    // host/port, etc.) which is far more useful for debugging than a
-    // generic "something went wrong".
-    echo json_encode(["success" => false, "message" => "Mail could not be sent. Error: " . $mail->ErrorInfo]);
     exit();
-} catch (Throwable $e) {
-    echo json_encode(["success" => false, "message" => "Something went wrong: " . $e->getMessage()]);
-    exit();
+} catch (Throwable $e1) {
+    $err1 = $e1->getMessage();
+    
+    // Fallback attempt: If primary attempted port 465, try 587 (or vice versa)
+    $fallback_port   = ((int)$smtp_port === 465) ? 587 : 465;
+    $fallback_secure = ($fallback_port === 465) ? 'ssl' : 'tls';
+    
+    try {
+        send_with_phpmailer($smtp_host, $fallback_port, $fallback_secure, $smtp_username, $smtp_password, $owner_name, $owner_email, $owner_name, $visitor_email, $message);
+        echo json_encode(["success" => true, "message" => "message sent successfully"]);
+        exit();
+    } catch (Throwable $e2) {
+        $err2 = $e2->getMessage();
+        echo json_encode([
+            "success" => false,
+            "message" => "Mail error (Port {$smtp_port}/{$smtp_secure}): " . $err1 . " | Fallback (Port {$fallback_port}/{$fallback_secure}): " . $err2 . " [User: " . substr($smtp_username, 0, 4) . "***]"
+        ]);
+        exit();
+    }
 }
