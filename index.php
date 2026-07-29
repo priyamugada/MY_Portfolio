@@ -308,8 +308,13 @@
       <div class="row">
         <?php while ($row = mysqli_fetch_assoc($projects)): ?>
           <?php
+          $id = (int)$row['id'];
           $domain = htmlspecialchars($row['domain_name']);
-          $class = match ($domain) {
+          $title = htmlspecialchars($row['title']);
+          $desc = htmlspecialchars($row['description']);
+          $tech = htmlspecialchars($row['technologies']);
+          $link = htmlspecialchars($row['project_link']);
+          $class = match ($row['domain_name']) {
             "Machine Learning/Deep Learning" => "ml",
             "MERN Stack" => "mern",
             "Web development" => "web",
@@ -318,17 +323,27 @@
             default => "other"
           };
           ?>
-          <div class="box col-lg-4 col-md-11 col-sm-11 project <?php echo $class; ?>">
-            <h4><?php echo $domain; ?></h4>
-            <h5><?php echo htmlspecialchars($row['title']); ?> :</h5>
-            <p><?php echo htmlspecialchars($row['description']); ?></p>
+          <div class="box col-lg-4 col-md-11 col-sm-11 project <?php echo $class; ?>" id="project-card-<?php echo $id; ?>"
+            data-id="<?php echo $id; ?>"
+            data-domain="<?php echo $domain; ?>"
+            data-title="<?php echo $title; ?>"
+            data-desc="<?php echo $desc; ?>"
+            data-tech="<?php echo $tech; ?>"
+            data-link="<?php echo $link; ?>">
+            <h4 class="card-domain"><?php echo $domain; ?></h4>
+            <h5 class="card-title-text"><?php echo $title; ?> :</h5>
+            <p class="card-desc"><?php echo $desc; ?></p>
             <h5>Tech :</h5>
-            <p><?php echo htmlspecialchars($row['technologies']); ?></p>
-            <?php if (!empty($row['project_link'])): ?>
-              <a href="<?php echo htmlspecialchars($row['project_link']); ?>" target="_blank">
-                <button class="button">View</button>
-              </a>
-            <?php endif; ?>
+            <p class="card-tech"><?php echo $tech; ?></p>
+            <div class="d-flex flex-wrap gap-2 mt-2 align-items-center">
+              <?php if (!empty($row['project_link'])): ?>
+                <a href="<?php echo $link; ?>" target="_blank" class="card-link-anchor">
+                  <button class="button">View</button>
+                </a>
+              <?php endif; ?>
+              <button class="button btn-edit-project" onclick="openEditProjectModal(this)">Edit</button>
+              <button class="button btn-delete-project" style="background: #dc3545; color: white;" onclick="deleteProject(<?php echo $id; ?>)">Delete</button>
+            </div>
           </div>
         <?php endwhile; ?>
       </div>
@@ -469,7 +484,7 @@
     </div>
   </div>
 
-  <div class="modal fade bd-example-modal-lg" tabindex="-1" aria-labelledby="addnewproject" aria-hidden="true">
+  <div class="modal fade bd-example-modal-lg" tabindex="-1" aria-labelledby="addnewproject" aria-hidden="true" id="projectModal">
     <div class="modal-dialog modal-lg">
       <div class="modal-content">
         <div class="modal-header">
@@ -478,6 +493,8 @@
         </div>
         <div class="modal-body">
           <form id="addProject">
+            <input type="hidden" id="projectId" name="id" value="">
+            <input type="hidden" id="projectAction" name="action" value="add">
             <div class="mb-3">
               <label for="projectName" class="form-label">Project Name</label>
               <input type="text" class="form-control" id="projectName" name="projectName">

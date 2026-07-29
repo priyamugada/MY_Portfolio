@@ -3,36 +3,74 @@ header("Content-Type: application/json");
 require_once __DIR__ . '/../config/db_config.php';
 
 if (!$conn) {
-    $response = array("success" => false, "message" => "cannot connect now" . mysqli_connect_error());
-    echo json_encode($response);
+    echo json_encode(["success" => false, "message" => "Database connection failed: " . mysqli_connect_error()]);
     exit();
 }
 
-$domain_name = trim($_POST['domainName'] ?? '');
-$title = trim($_POST['projectName'] ?? '');
+$action = trim($_POST['action'] ?? 'add');
+
+if ($action === 'delete') {
+    $id = (int)($_POST['id'] ?? 0);
+    if ($id <= 0) {
+        echo json_encode(["success" => false, "message" => "Invalid project ID"]);
+        exit();
+    }
+    
+    $sql = "DELETE FROM projects WHERE id = ?";
+    $stmt = mysqli_prepare($conn, $sql);
+    mysqli_stmt_bind_param($stmt, "i", $id);
+    
+    if (mysqli_stmt_execute($stmt)) {
+        echo json_encode(["success" => true, "message" => "Project deleted successfully", "id" => $id]);
+    } else {
+        echo json_encode(["success" => false, "message" => mysqli_stmt_error($stmt)]);
+    }
+    mysqli_stmt_close($stmt);
+    mysqli_close($conn);
+    exit();
+}
+
+$domain_name  = trim($_POST['domainName'] ?? '');
+$title        = trim($_POST['projectName'] ?? '');
 $technologies = trim($_POST['technologies'] ?? '');
-$description = trim($_POST['projectDesc'] ?? '');
+$description  = trim($_POST['projectDesc'] ?? '');
 $project_link = trim($_POST['projectLink'] ?? '');
 
 if ($domain_name === '' || $title === '') {
-    $response = array("success" => false, "message" => "Project name and domain are required");
-    echo json_encode($response);
+    echo json_encode(["success" => false, "message" => "Project name and domain are required"]);
     exit();
 }
 
-// Fixed: previously built with raw string interpolation, which was a SQL
-// injection vulnerability. Now uses a prepared statement instead.
-$sql = "INSERT INTO projects (domain_name, title, technologies, description, project_link) VALUES (?, ?, ?, ?, ?)";
-$stmt = mysqli_prepare($conn, $sql);
-mysqli_stmt_bind_param($stmt, "sssss", $domain_name, $title, $technologies, $description, $project_link);
-
-if (mysqli_stmt_execute($stmt)) {
-    $response = array("success" => true, "message" => "succesfully added");
-    echo json_encode($response);
+if ($action === 'edit') {
+    $id = (int)($_POST['id'] ?? 0);
+    if ($id <= 0) {
+        echo json_encode(["success" => false, "message" => "Invalid project ID for edit"]);
+        exit();
+    }
+    
+    $sql = "UPDATE projects SET domain_name = ?, title = ?, technologies = ?, description = ?, project_link = ? WHERE id = ?";
+    $stmt = mysqli_prepare($conn, $sql);
+    mysqli_stmt_bind_param($stmt, "sssssi", $domain_name, $title, $technologies, $description, $project_link, $id);
+    
+    if (mysqli_stmt_execute($stmt)) {
+        echo json_encode(["success" => true, "message" => "Project updated successfully", "id" => $id]);
+    } else {
+        echo json_encode(["success" => false, "message" => mysqli_stmt_error($stmt)]);
+    }
+    mysqli_stmt_close($stmt);
 } else {
-    $response = array("success" => false, "message" => mysqli_stmt_error($stmt));
-    echo json_encode($response);
+    // Default action: add
+    $sql = "INSERT INTO projects (domain_name, title, technologies, description, project_link) VALUES (?, ?, ?, ?, ?)";
+    $stmt = mysqli_prepare($conn, $sql);
+    mysqli_stmt_bind_param($stmt, "sssss", $domain_name, $title, $technologies, $description, $project_link);
+    
+    if (mysqli_stmt_execute($stmt)) {
+        $inserted_id = mysqli_insert_id($conn);
+        echo json_encode(["success" => true, "message" => "Project added successfully", "id" => $inserted_id]);
+    } else {
+        echo json_encode(["success" => false, "message" => mysqli_stmt_error($stmt)]);
+    }
+    mysqli_stmt_close($stmt);
 }
 
-mysqli_stmt_close($stmt);
 mysqli_close($conn);
