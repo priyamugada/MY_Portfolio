@@ -36,13 +36,84 @@ if (!filter_var($visitor_email, FILTER_VALIDATE_EMAIL)) {
 // escapes/validates addresses internally.
 $visitor_email = str_replace(["\r", "\n"], '', $visitor_email);
 
+// 1. Check for HTTPS-based API keys first (bypasses Render's outbound SMTP port blocking)
+$resend_key    = getenv('RESEND_API_KEY');
+$brevo_key     = getenv('BREVO_API_KEY');
+$web3forms_key = getenv('WEB3FORMS_KEY');
+
+if (!empty($resend_key)) {
+    $ch = curl_init('https://api.resend.com/emails');
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_POST, true);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, [
+        'Authorization: Bearer ' . trim($resend_key),
+        'Content-Type: application/json'
+    ]);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode([
+        'from'     => 'Portfolio Contact <onboarding@resend.dev>',
+        'to'       => [$owner_email],
+        'reply_to' => $visitor_email,
+        'subject'  => 'New message from Portfolio',
+        'text'     => "Message from: $visitor_email\n\n$message"
+    ]));
+    $res = curl_exec($ch);
+    $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+    if ($code >= 200 && $code < 300) {
+        echo json_encode(["success" => true, "message" => "message sent successfully"]);
+        exit();
+    }
+}
+
+if (!empty($brevo_key)) {
+    $ch = curl_init('https://api.brevo.com/v3/smtp/email');
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_POST, true);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, [
+        'api-key: ' . trim($brevo_key),
+        'Content-Type: application/json'
+    ]);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode([
+        'sender'      => ['name' => $owner_name, 'email' => !empty($smtp_username) ? $smtp_username : $owner_email],
+        'to'          => [['email' => $owner_email, 'name' => $owner_name]],
+        'replyTo'     => ['email' => $visitor_email],
+        'subject'     => 'New message from Portfolio',
+        'textContent' => "Message from: $visitor_email\n\n$message"
+    ]));
+    $res = curl_exec($ch);
+    $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+    if ($code >= 200 && $code < 300) {
+        echo json_encode(["success" => true, "message" => "message sent successfully"]);
+        exit();
+    }
+}
+
+if (!empty($web3forms_key)) {
+    $ch = curl_init('https://api.web3forms.com/submit');
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_POST, true);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode([
+        'access_key' => trim($web3forms_key),
+        'name'       => $visitor_email,
+        'email'      => $visitor_email,
+        'message'    => $message,
+        'subject'    => 'New message from Portfolio'
+    ]));
+    $res = curl_exec($ch);
+    $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+    if ($code >= 200 && $code < 300) {
+        echo json_encode(["success" => true, "message" => "message sent successfully"]);
+        exit();
+    }
+}
+
 if (empty($smtp_username) || empty($smtp_password)) {
-    // Fail loudly and clearly instead of pretending to send. This is the
-    // single most common reason contact forms "don't work": SMTP_USER /
-    // SMTP_PASS were never set, so there is nothing to authenticate with.
     echo json_encode([
         "success" => false,
-        "message" => "Mail is not configured on the server yet (missing SMTP_USER/SMTP_PASS). See README for setup."
+        "message" => "Mail is not configured on the server yet."
     ]);
     exit();
 }
@@ -84,7 +155,7 @@ function send_with_phpmailer($host, $port, $secure, $user, $pass, $from_name, $t
     $mail->send();
 }
 
-// First try with configured port & secure settings
+// Try with configured port & secure settings
 try {
     send_with_phpmailer($smtp_host, $smtp_port, $smtp_secure, $smtp_username, $smtp_password, $owner_name, $owner_email, $owner_name, $visitor_email, $message);
     echo json_encode(["success" => true, "message" => "message sent successfully"]);
@@ -92,7 +163,6 @@ try {
 } catch (Throwable $e1) {
     $err1 = $e1->getMessage();
     
-    // Fallback attempt: If primary attempted port 465, try 587 (or vice versa)
     $fallback_port   = ((int)$smtp_port === 465) ? 587 : 465;
     $fallback_secure = ($fallback_port === 465) ? 'ssl' : 'tls';
     
@@ -101,10 +171,9 @@ try {
         echo json_encode(["success" => true, "message" => "message sent successfully"]);
         exit();
     } catch (Throwable $e2) {
-        $err2 = $e2->getMessage();
         echo json_encode([
             "success" => false,
-            "message" => "Mail error (Port {$smtp_port}/{$smtp_secure}): " . $err1 . " | Fallback (Port {$fallback_port}/{$fallback_secure}): " . $err2 . " [User: " . substr($smtp_username, 0, 4) . "***]"
+            "message" => "Render Free Tier blocks raw SMTP ports 465/587. Please add WEB3FORMS_KEY or RESEND_API_KEY in Render Environment Variables for HTTPS email sending."
         ]);
         exit();
     }
